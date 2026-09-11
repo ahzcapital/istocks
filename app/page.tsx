@@ -10,7 +10,7 @@ export async function generateMetadata({searchParams}:{searchParams:Promise<{cou
   return {title:`EGYstocks — ${market.config.countryName} Stock Market Rankings`,description:`Track ${market.config.countryName}'s listed companies by market capitalization on the ${market.config.exchangeName}.`};
 }
 
-export default async function Home({searchParams}:{searchParams:Promise<{country?:string;top?:string;sector?:string;search?:string}>}){
+export default async function Home({searchParams}:{searchParams:Promise<{country?:string;top?:string;sector?:string;search?:string;exchange?:string}>}){
   const params=await searchParams;const selected=country(params.country);const top=allowedTop.includes(Number(params.top))?Number(params.top):100;
-  return <HomeClient initialCountry={selected} initialTop={top} initialSector={params.sector??'All'} initialSearch={params.search??''}/>;
+  return <HomeClient initialCountry={selected} initialTop={top} initialSector={params.sector??'All'} initialSearch={params.search??''} initialExchange={params.exchange??'All'}/>;
 }
