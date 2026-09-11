@@ -1,9 +1,15 @@
+export type MarketExchange = {
+  code: string;
+  name: string;
+};
+
 export type MarketConfig = {
   countryCode: string;
   countryName: string;
   flag: string;
   exchangeCode: string;
   exchangeName: string;
+  exchanges?: MarketExchange[];
   currencyCode: string;
   currencySymbol: string;
   timezone: string;
