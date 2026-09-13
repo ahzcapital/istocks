@@ -1,3 +1,4 @@
+import {getCanonicalMarketCompanies} from '@/lib/market-data/canonical';
 import {getMarketCompaniesSync,getMarketStatusSync,MARKET_REGISTRY} from './registry';
 import type {MarketCompany,MarketConfig} from './types';
 
@@ -28,25 +29,25 @@ export type NorthAfricaCompany=MarketCompany & {
 
 export function isNorthAfrica(code:string|undefined):boolean{return code?.toUpperCase()===NORTH_AFRICA_CODE;}
 
-export function getNorthAfricaCompanies():NorthAfricaCompany[]{
-  const rows=NORTH_AFRICA_COUNTRIES.flatMap(code=>getMarketCompaniesSync(code).map(company=>({
-    ...company,
-    countryCode:code,
-    countryName:MARKET_REGISTRY[code].config.countryName,
-    countryFlag:MARKET_REGISTRY[code].config.flag,
-  })));
+function rankNorthAfricaRows(rows:MarketCompany[]):NorthAfricaCompany[]{
   const seen=new Set<string>();
-  const eligible=rows.filter(company=>{
+  return rows.filter(company=>{
     const key=company.id;
     if(seen.has(key)||company.marketCapUSD===undefined||!Number.isFinite(company.marketCapUSD)||company.marketCapUSD<=0)return false;
     seen.add(key);
     return true;
-  });
-  return eligible.sort((a,b)=>{
-    const cap=b.marketCapUSD!-a.marketCapUSD!;
-    if(cap!==0)return cap;
-    return a.id.localeCompare(b.id);
-  }).map((company,index)=>({...company,regionalRank:index+1}));
+  }).sort((a,b)=>{const cap=b.marketCapUSD!-a.marketCapUSD!;return cap!==0?cap:a.id.localeCompare(b.id);}).map((company,index)=>({...company,regionalRank:index+1,countryName:MARKET_REGISTRY[company.countryCode].config.countryName,countryFlag:MARKET_REGISTRY[company.countryCode].config.flag}));
+}
+
+export function getNorthAfricaCompanies():NorthAfricaCompany[]{
+  const rows=NORTH_AFRICA_COUNTRIES.flatMap(code=>getMarketCompaniesSync(code).map(company=>({...company,countryCode:code})));
+  return rankNorthAfricaRows(rows);
+}
+
+export async function getCanonicalNorthAfricaCompanies():Promise<NorthAfricaCompany[]>{
+  const responses=await Promise.all(NORTH_AFRICA_COUNTRIES.map(code=>getCanonicalMarketCompanies(code)));
+  const rows=responses.flatMap((response,index)=>response.data.map(company=>({...company,countryCode:NORTH_AFRICA_COUNTRIES[index],dataSource:company.dataSource??response.meta.source})));
+  return rankNorthAfricaRows(rows);
 }
 
 export function filterNorthAfricaCompanies(companies:NorthAfricaCompany[],options?:{country?:string;sector?:string;exchange?:string;search?:string}):NorthAfricaCompany[]{
