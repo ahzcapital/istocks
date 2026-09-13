@@ -4,3 +4,21 @@ model Company { id String @id @default(cuid()) name String ticker String @unique
 model MarketQuote { id String @id @default(cuid()) companyId String price Decimal @db.Decimal(24,8) previousClose Decimal? @db.Decimal(24,8) change Decimal? @db.Decimal(24,8) changePercent Decimal? @db.Decimal(12,6) volume Decimal? @db.Decimal(24,4) timestamp DateTime source String company Company @relation(fields:[companyId],references:[id],onDelete:Cascade) @@index([companyId,timestamp]) @@index([timestamp]) }
 model FXRate { id String @id @default(cuid()) baseCurrency String quoteCurrency String rate Decimal @db.Decimal(18,8) timestamp DateTime source String @@index([baseCurrency,quoteCurrency,timestamp]) }
 model MarketSnapshot { id String @id @default(cuid()) timestamp DateTime totalMarketCapEGP Decimal @db.Decimal(28,4) totalMarketCapUSD Decimal @db.Decimal(28,4) marketStatus String @@index([timestamp]) }
+
+model PersonVote {
+  id           String   @id @default(cuid())
+  personId     String
+  voterKey     String
+  vote         PersonVoteType
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([personId, voterKey])
+  @@index([personId, vote])
+  @@index([voterKey])
+}
+
+enum PersonVoteType {
+  like
+  dislike
+}
