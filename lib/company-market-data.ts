@@ -1,5 +1,6 @@
 import type {HistoricalPricePoint,MarketCompany} from '@/lib/markets/types';
 import {getCompanyMaxHistory} from '@/lib/company-max-history';
+import {getHistoricalPrices} from '@/lib/market-data/historical-prices';
 
 type YahooChartResult={
   meta?:{symbol?:string;currency?:string;regularMarketPrice?:number;previousClose?:number;chartPreviousClose?:number;regularMarketTime?:number};
@@ -54,16 +55,34 @@ function buildQuote(result:YahooChartResult,company:MarketCompany):Partial<Marke
   const meta=result.meta??{};const latest=result.indicators?.quote?.[0];const close=latest?.close?.filter(finite).at(-1);const previous=finite(meta.previousClose)?meta.previousClose:finite(meta.chartPreviousClose)?meta.chartPreviousClose:undefined;const price=finite(meta.regularMarketPrice)?meta.regularMarketPrice:close;const open=latest?.open?.filter(finite).at(-1);const high=latest?.high?.filter(finite).at(-1);const low=latest?.low?.filter(finite).at(-1);const volume=latest?.volume?.filter(finite).at(-1);const changePercent=price!==undefined&&previous!==undefined&&previous!==0?((price-previous)/previous)*100:company.changePercent;const timestamp=meta.regularMarketTime?new Date(meta.regularMarketTime*1000).toISOString():new Date().toISOString();const marketCapLocal=price!==undefined&&company.sharesOutstanding!==undefined?price*company.sharesOutstanding:company.marketCapLocal;return {...company,price,previousClose:previous??company.previousClose,changePercent,open:open??company.open,high:high??company.high,low:low??company.low,volume:volume??company.volume,marketCapLocal,marketCapUSD:marketCapLocal!==undefined&&company.marketCapUSD!==undefined&&company.marketCapLocal?company.marketCapUSD*(marketCapLocal/company.marketCapLocal):company.marketCapUSD,marketCapSource:marketCapLocal!==undefined&&company.sharesOutstanding!==undefined&&price!==undefined?'calculated':company.marketCapSource,timestamp,dataSource:YAHOO_SOURCE,providerTicker:meta.symbol};
 }
 
-export async function getCompanyMarketData(company:MarketCompany){
-  const symbol=await resolveYahooSymbol(company);
-  if(!symbol){const fallback=await getCompanyMaxHistory(company);return {quote:company,history:fallback.history,source:company.dataSource??'Configured market snapshot',retrievedAt:new Date().toISOString(),providerTicker:fallback.providerTicker,delay:'Delayed snapshot',historyAvailable:fallback.history.length>1,error:fallback.error};}
+function normalizeDatabaseHistory(rows:Awaited<ReturnType<typeof getHistoricalPrices>>):HistoricalPricePoint[]{
+  return rows.filter(row=>Number.isFinite(row.price)&&row.price>0).map(row=>({date:row.timestamp,close:row.price,volume:row.volume,source:row.source}));
+}
+
+async function getDatabaseHistory(company:MarketCompany){
+  if(!process.env.DATABASE_URL)return undefined;
   try{
-    const [quoteResult,maxHistory]=await Promise.all([fetchYahooChart(symbol,'5d'),getCompanyMaxHistory(company)]);
+    const rows=await getHistoricalPrices({ticker:company.ticker,limit:5000});
+    const history=normalizeDatabaseHistory(rows);
+    return history.length>1?{history,source:'Production market database',providerTicker:company.ticker,error:undefined}:undefined;
+  }catch{return undefined;}
+}
+
+export async function getCompanyMarketData(company:MarketCompany){
+  const databaseHistory=await getDatabaseHistory(company);
+  const symbol=await resolveYahooSymbol(company);
+  if(!symbol){
+    if(databaseHistory)return {quote:company,history:databaseHistory.history,source:databaseHistory.source,retrievedAt:new Date().toISOString(),providerTicker:databaseHistory.providerTicker,delay:'Verified database history',historyAvailable:true,error:undefined};
+    const fallback=await getCompanyMaxHistory(company);return {quote:company,history:fallback.history,source:company.dataSource??'Configured market snapshot',retrievedAt:new Date().toISOString(),providerTicker:fallback.providerTicker,delay:'Delayed snapshot',historyAvailable:fallback.history.length>1,error:fallback.error};
+  }
+  try{
+    const [quoteResult,maxHistory]=await Promise.all([fetchYahooChart(symbol,'5d'),databaseHistory?Promise.resolve(databaseHistory):getCompanyMaxHistory(company)]);
     const history=maxHistory.history.length>1?maxHistory.history:normalizeHistory(await fetchYahooChart(symbol,'max'));
     if(history.length===0)throw new Error('Provider returned no usable historical observations');
     const quote=buildQuote(quoteResult,company);
-    return {quote,history,source:YAHOO_SOURCE,retrievedAt:new Date().toISOString(),providerTicker:quoteResult.meta?.symbol??symbol,delay:'Delayed / provider-defined',historyAvailable:true,error:maxHistory.error||undefined};
+    return {quote,history,source:maxHistory.source??YAHOO_SOURCE,retrievedAt:new Date().toISOString(),providerTicker:quoteResult.meta?.symbol??symbol,delay:maxHistory.source==='Production market database'?'Verified database history':'Delayed / provider-defined',historyAvailable:true,error:maxHistory.error||undefined};
   }catch(error){
+    if(databaseHistory)return {quote:company,history:databaseHistory.history,source:databaseHistory.source,retrievedAt:new Date().toISOString(),providerTicker:databaseHistory.providerTicker,delay:'Verified database history',historyAvailable:true,error:error instanceof Error?error.message:'External quote provider error'};
     const fallback=await getCompanyMaxHistory(company);
     return {quote:company,history:fallback.history,source:company.dataSource??'Configured market snapshot',retrievedAt:new Date().toISOString(),providerTicker:fallback.providerTicker??symbol,delay:'Delayed snapshot',historyAvailable:fallback.history.length>1,error:error instanceof Error?error.message:'Unknown market-data provider error'};
   }
