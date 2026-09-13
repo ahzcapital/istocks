@@ -1,4 +1,4 @@
-import {getMarketCompaniesSync,MARKET_REGISTRY} from './registry';
+import {getMarketCompaniesSync,getMarketStatusSync,MARKET_REGISTRY} from './registry';
 import type {MarketCompany,MarketConfig} from './types';
 
 export const NORTH_AFRICA_CODE='NA';
@@ -58,7 +58,7 @@ export function filterNorthAfricaCompanies(companies:NorthAfricaCompany[],option
 }
 
 export function getNorthAfricaStatus():'open'|'closed'|'auction'{
-  const statuses=NORTH_AFRICA_COUNTRIES.map(code=>MARKET_REGISTRY[code].provider.getMarketStatus());
+  const statuses=NORTH_AFRICA_COUNTRIES.map(code=>getMarketStatusSync(code));
   if(statuses.some(status=>status==='open'))return 'open';
   if(statuses.some(status=>status==='auction'))return 'auction';
   return 'closed';
