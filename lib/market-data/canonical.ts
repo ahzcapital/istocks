@@ -1,18 +1,56 @@
 import { prisma } from '@/lib/prisma';
 import { getMarketCompaniesSync, getMarketSummarySync, getMarketStatusSync, hasMarket, rankMarketCompanies } from '@/lib/markets/registry';
 import type { MarketCompany, MarketSummary } from '@/lib/markets/types';
+import { ConfiguredMoroccoHttpProvider } from './morocco-provider';
 
-export type CanonicalDataMode = 'database' | 'snapshot';
-export type CanonicalMeta = { market: string; mode: CanonicalDataMode; source: string; delay: string; asOf: string; retrievedAt: string; marketStatus: 'open' | 'closed' | 'auction' };
+export type CanonicalDataMode = 'database' | 'live-http' | 'snapshot';
+export type CanonicalMeta = {
+  market: string;
+  mode: CanonicalDataMode;
+  source: string;
+  delay: string;
+  asOf: string;
+  retrievedAt: string;
+  marketStatus: 'open' | 'closed' | 'auction';
+};
 export type CanonicalResponse<T> = { data: T; meta: CanonicalMeta };
 
 function snapshotMeta(market: string, summary: MarketSummary): CanonicalMeta {
-  return { market, mode: 'snapshot', source: summary.dataSource, delay: summary.delay, asOf: summary.lastUpdated, retrievedAt: new Date().toISOString(), marketStatus: getMarketStatusSync(market) };
+  return {
+    market,
+    mode: 'snapshot',
+    source: summary.dataSource,
+    delay: summary.delay,
+    asOf: summary.lastUpdated,
+    retrievedAt: new Date().toISOString(),
+    marketStatus: getMarketStatusSync(market),
+  };
 }
 
 export async function getCanonicalMarketCompanies(marketCode: string): Promise<CanonicalResponse<MarketCompany[]>> {
   const market = marketCode.toUpperCase();
   if (!hasMarket(market)) throw new Error(`Unsupported market: ${market}`);
+
+  if (market === 'MA') {
+    const provider = new ConfiguredMoroccoHttpProvider();
+    if (provider.isConfigured()) {
+      const data = rankMarketCompanies(await provider.getCompanies());
+      if (data.length === 0) throw new Error('Configured Morocco provider returned no observations.');
+      const asOf = data.reduce((latest, row) => row.timestamp > latest ? row.timestamp : latest, data[0].timestamp);
+      return {
+        data,
+        meta: {
+          market,
+          mode: 'live-http',
+          source: data[0].dataSource,
+          delay: 'Provider-defined',
+          asOf,
+          retrievedAt: new Date().toISOString(),
+          marketStatus: getMarketStatusSync(market),
+        },
+      };
+    }
+  }
 
   if (process.env.DATABASE_URL && market === 'EG') {
     const [quotes, companyCount] = await Promise.all([
@@ -56,6 +94,30 @@ export async function getCanonicalMarketCompanies(marketCode: string): Promise<C
 export async function getCanonicalMarketSummary(marketCode: string): Promise<CanonicalResponse<MarketSummary>> {
   const market = marketCode.toUpperCase();
   if (!hasMarket(market)) throw new Error(`Unsupported market: ${market}`);
+
+  if (market === 'MA') {
+    const provider = new ConfiguredMoroccoHttpProvider();
+    if (provider.isConfigured()) {
+      const data = rankMarketCompanies(await provider.getCompanies());
+      if (data.length === 0) throw new Error('Configured Morocco provider returned no observations.');
+      const fx = data.reduce((latest, row) => latest ?? row.marketCapLocal && row.marketCapUSD ? row.marketCapLocal / row.marketCapUSD : undefined, undefined as number | undefined);
+      const summary: MarketSummary = {
+        count: data.length,
+        totalLocal: data.reduce((sum, row) => sum + (row.marketCapLocal ?? 0), 0),
+        totalUSD: data.reduce((sum, row) => sum + (row.marketCapUSD ?? 0), 0),
+        industries: new Set(data.map((row) => row.sector).filter(Boolean)).size,
+        fxRate: fx,
+        fxSource: data[0].dataSource,
+        lastUpdated: data.reduce((latest, row) => row.timestamp > latest ? row.timestamp : latest, data[0].timestamp),
+        dataSource: data[0].dataSource,
+        delay: 'Provider-defined',
+      };
+      return {
+        data: summary,
+        meta: { market, mode: 'live-http', source: summary.dataSource, delay: summary.delay, asOf: summary.lastUpdated, retrievedAt: new Date().toISOString(), marketStatus: getMarketStatusSync(market) },
+      };
+    }
+  }
 
   if (process.env.DATABASE_URL && market === 'EG') {
     const [snapshot, fx] = await Promise.all([
