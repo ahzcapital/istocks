@@ -1,4 +1,4 @@
-import {rankCompanies} from '@/lib/market';
+import {rankCompanies} from '../market';
 import {MOROCCO_CONFIG,MOROCCO_FX_USD_MAD,moroccoCompanies} from './morocco';
 import {TUNISIA_CONFIG,TUNISIA_FX_USD_TND,tunisiaCompanies} from './tunisia';
 import {ALGERIA_CONFIG,ALGERIA_FX_USD_DZD,algeriaCompanies} from './algeria';
