@@ -15,13 +15,13 @@ const country=(value:string|undefined)=>value&&((value.toUpperCase()==='NA')||ha
 export default async function MarketsPage({searchParams}:{searchParams:Promise<{country?:string;top?:string;sector?:string;search?:string;exchange?:string;marketCountry?:string}>}){
   const params=await searchParams;
   const selected=country(params.country);
-  const top=allowedTop.includes(Number(params.top))?Number(params.top):100;
-  let initialCompanies= isNorthAfrica(selected)?getNorthAfricaCompanies():[];
+  const top=allowedTop.includes(Number(params.top))?Number(params.top):(isNorthAfrica(selected)?1000:100);
+  let initialCompanies=isNorthAfrica(selected)?getNorthAfricaCompanies():[];
   if(!isNorthAfrica(selected)){try{initialCompanies=await getMarketCompanies(selected);}catch{}}
   return <>
     <div style={{maxWidth:1280,margin:'0 auto',padding:'18px 28px 0',display:'flex',justifyContent:'flex-end'}}>
       <Link href="/markets/matrix" style={{fontSize:11,color:'var(--muted)',textDecoration:'none',letterSpacing:'.04em'}}>North Africa Market Matrix →</Link>
     </div>
-    <HomeClient initialCountry={selected} initialTop={top} initialSector={params.sector??'All'} initialSearch={params.search??''} initialExchange={params.exchange??'All'} initialCompanies={initialCompanies}/>
+    <HomeClient initialCountry={selected} initialTop={top} initialSector={params.sector??'All'} initialSearch={params.search??''} initialExchange={params.exchange??'All'} initialRegionalCountry={params.marketCountry??'All'} initialCompanies={initialCompanies}/>
   </>;
 }
