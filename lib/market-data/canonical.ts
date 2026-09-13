@@ -15,10 +15,14 @@ export async function getCanonicalMarketCompanies(marketCode: string): Promise<C
   if (!hasMarket(market)) throw new Error(`Unsupported market: ${market}`);
 
   if (process.env.DATABASE_URL && market === 'EG') {
-    const quotes = await prisma.marketQuote.findMany({ include: { company: true }, orderBy: { timestamp: 'desc' }, take: 5000 });
+    const [quotes, companyCount] = await Promise.all([
+      prisma.marketQuote.findMany({ include: { company: true }, orderBy: { timestamp: 'desc' }, take: 5000 }),
+      prisma.company.count({ where: { country: 'EG', active: true } }),
+    ]);
     const latestByCompany = new Map<string, (typeof quotes)[number]>();
     for (const quote of quotes) if (!latestByCompany.has(quote.companyId)) latestByCompany.set(quote.companyId, quote);
-    if (latestByCompany.size > 0) {
+
+    if (companyCount > 0 && latestByCompany.size >= companyCount) {
       const fx = await prisma.fXRate.findFirst({ where: { baseCurrency: 'USD', quoteCurrency: 'EGP' }, orderBy: { timestamp: 'desc' } });
       const fxRate = fx ? Number(fx.rate) : undefined;
       const rows = [...latestByCompany.values()].map((quote) => {
@@ -26,7 +30,7 @@ export async function getCanonicalMarketCompanies(marketCode: string): Promise<C
         const price = Number(quote.price);
         const marketCapLocal = price * shares;
         return {
-          id: `EG-EGX-${quote.company.ticker}`, countryCode: quote.company.country, exchangeCode: quote.company.exchange,
+          id: `EG-EGX-${quote.company.ticker}`, countryCode: 'EG', exchangeCode: quote.company.exchange,
           ticker: quote.company.ticker, name: quote.company.name, sector: quote.company.industry, industry: quote.company.industry,
           currency: quote.company.currency, price,
           previousClose: quote.previousClose === null ? undefined : Number(quote.previousClose),
@@ -54,8 +58,10 @@ export async function getCanonicalMarketSummary(marketCode: string): Promise<Can
   if (!hasMarket(market)) throw new Error(`Unsupported market: ${market}`);
 
   if (process.env.DATABASE_URL && market === 'EG') {
-    const snapshot = await prisma.marketSnapshot.findFirst({ orderBy: { timestamp: 'desc' } });
-    const fx = await prisma.fXRate.findFirst({ where: { baseCurrency: 'USD', quoteCurrency: 'EGP' }, orderBy: { timestamp: 'desc' } });
+    const [snapshot, fx] = await Promise.all([
+      prisma.marketSnapshot.findFirst({ orderBy: { timestamp: 'desc' } }),
+      prisma.fXRate.findFirst({ where: { baseCurrency: 'USD', quoteCurrency: 'EGP' }, orderBy: { timestamp: 'desc' } }),
+    ]);
     if (snapshot) {
       const companies = await prisma.company.findMany({ where: { country: 'EG', active: true }, select: { industry: true } });
       const summary: MarketSummary = {
