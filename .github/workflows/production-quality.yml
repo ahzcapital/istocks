@@ -32,8 +32,17 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Unit tests
-        run: npm test
+      - name: Test market engine
+        run: npx vitest run lib/market.test.ts
+
+      - name: Test market-data pipeline
+        run: npx vitest run lib/market-data/pipeline.test.ts
+
+      - name: Test historical valuation
+        run: npx vitest run lib/market-data/historical-valuation.test.ts
+
+      - name: Test market-data guardian
+        run: npx vitest run lib/market-data/guardian.test.ts
 
       - name: Production build
         run: npm run build
