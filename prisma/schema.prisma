@@ -8,18 +8,19 @@ datasource db {
 }
 
 model Company {
-  id                String        @id @default(cuid())
+  id                String              @id @default(cuid())
   name              String
-  ticker            String        @unique
+  ticker            String              @unique
   exchange          String
   country           String
   industry          String
-  sharesOutstanding Decimal       @db.Decimal(24,4)
+  sharesOutstanding Decimal             @db.Decimal(24,4)
   currency          String
-  active            Boolean       @default(true)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  active            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
   quotes            MarketQuote[]
+  shareCountHistory ShareCountHistory[]
 }
 
 model MarketQuote {
@@ -57,6 +58,22 @@ model MarketSnapshot {
   marketStatus      String
 
   @@index([timestamp])
+}
+
+model ShareCountHistory {
+  id                String   @id @default(cuid())
+  companyId         String
+  sharesOutstanding Decimal  @db.Decimal(24,4)
+  effectiveFrom     DateTime
+  effectiveTo       DateTime?
+  source            String
+  confidence        String
+  retrievedAt       DateTime @default(now())
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, effectiveFrom])
+  @@index([companyId, effectiveTo])
+  @@index([effectiveFrom, effectiveTo])
 }
 
 model PersonVote {
