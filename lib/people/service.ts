@@ -60,6 +60,7 @@ async function getExistingVoterKey() {
 }
 
 export async function getVoteStats() {
+  if (!process.env.DATABASE_URL) return new Map<string, {likes: number; dislikes: number}>();
   try {
     const rows = await prisma.personVote.groupBy({
       by: ['personId', 'vote'],
@@ -79,7 +80,7 @@ export async function getVoteStats() {
 }
 
 export async function getUserVotes(personIds: string[]) {
-  if (!personIds.length) return new Map<string, 'like' | 'dislike'>();
+  if (!personIds.length || !process.env.DATABASE_URL) return new Map<string, 'like' | 'dislike'>();
   try {
     const voterKey = await getExistingVoterKey();
     if (!voterKey) return new Map<string, 'like' | 'dislike'>();
