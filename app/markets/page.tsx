@@ -1,5 +1,6 @@
 import type {Metadata} from 'next';
 import HomeClient from '../home-client';
+import Link from 'next/link';
 import {hasMarket,getMarketCompanies} from '@/lib/markets/registry';
 
 export const metadata:Metadata={
@@ -16,5 +17,10 @@ export default async function MarketsPage({searchParams}:{searchParams:Promise<{
   const top=allowedTop.includes(Number(params.top))?Number(params.top):100;
   let initialCompanies:Awaited<ReturnType<typeof getMarketCompanies>>=[];
   try{initialCompanies=await getMarketCompanies(selected)}catch{}
-  return <HomeClient initialCountry={selected} initialTop={top} initialSector={params.sector??'All'} initialSearch={params.search??''} initialExchange={params.exchange??'All'} initialCompanies={initialCompanies}/>;
+  return <>
+    <div style={{maxWidth:1280,margin:'0 auto',padding:'18px 28px 0',display:'flex',justifyContent:'flex-end'}}>
+      <Link href="/markets/matrix" style={{fontSize:11,color:'var(--muted)',textDecoration:'none',letterSpacing:'.04em'}}>North Africa Market Matrix →</Link>
+    </div>
+    <HomeClient initialCountry={selected} initialTop={top} initialSector={params.sector??'All'} initialSearch={params.search??''} initialExchange={params.exchange??'All'} initialCompanies={initialCompanies}/>
+  </>;
 }
