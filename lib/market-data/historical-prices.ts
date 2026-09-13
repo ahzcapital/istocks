@@ -50,12 +50,12 @@ export async function getHistoricalPrices(query: HistoricalPriceQuery): Promise<
         ? { timestamp: { ...(query.from ? { gte: query.from } : {}), ...(query.to ? { lte: query.to } : {}) } }
         : {}),
     },
-    orderBy: { timestamp: 'asc' },
+    orderBy: { timestamp: 'desc' },
     take: limit,
     select: { timestamp: true, price: true, previousClose: true, changePercent: true, volume: true, source: true },
   });
 
-  return quotes.map((quote) => ({
+  return quotes.reverse().map((quote) => ({
     timestamp: quote.timestamp.toISOString(),
     price: Number(quote.price),
     previousClose: toNumber(quote.previousClose),
