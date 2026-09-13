@@ -14,16 +14,18 @@ export async function persistEgyptMarketData(input: PersistEgyptMarketDataInput)
   }
 
   await prisma.$transaction(async (tx) => {
-    for (const observation of input.observations) {
-      const seed = await tx.company.findUnique({ where: { ticker: observation.ticker } });
+    let totalMarketCapEGP = 0;
 
-      if (!seed) {
+    for (const observation of input.observations) {
+      const company = await tx.company.findUnique({ where: { ticker: observation.ticker } });
+
+      if (!company) {
         throw new Error(`Cannot persist unknown company ticker: ${observation.ticker}`);
       }
 
       await tx.marketQuote.create({
         data: {
-          companyId: seed.id,
+          companyId: company.id,
           price: observation.price,
           previousClose: observation.previousClose,
           changePercent: observation.changePercent,
@@ -36,6 +38,8 @@ export async function persistEgyptMarketData(input: PersistEgyptMarketDataInput)
           source: observation.source,
         },
       });
+
+      totalMarketCapEGP += observation.price * Number(company.sharesOutstanding);
     }
 
     await tx.fxRate.create({
@@ -47,11 +51,6 @@ export async function persistEgyptMarketData(input: PersistEgyptMarketDataInput)
         source: input.fx.source,
       },
     });
-
-    const totalMarketCapEGP = input.observations.reduce((total, observation) => {
-      const company = input.observations.find((candidate) => candidate.ticker === observation.ticker);
-      return total + (company ? 0 : 0);
-    }, 0);
 
     await tx.marketSnapshot.create({
       data: {
