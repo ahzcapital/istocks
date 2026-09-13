@@ -1,0 +1,19 @@
+name: Production Smoke Checks
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check homepage
+        run: curl --fail --silent --show-error --location --max-time 20 https://egystocks.vercel.app/ > /dev/null
+
+      - name: Check markets route
+        run: curl --fail --silent --show-error --location --max-time 20 https://egystocks.vercel.app/markets > /dev/null
