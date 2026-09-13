@@ -3,6 +3,7 @@ import HomeClient from '../home-client';
 import Link from 'next/link';
 import {hasMarket,getMarketCompanies} from '@/lib/markets/registry';
 import {getCanonicalNorthAfricaCompanies,isNorthAfrica} from '@/lib/markets/north-africa';
+import type {MarketCompany} from '@/lib/markets/types';
 
 export const metadata:Metadata={
   title:'North Africa Hub | Stock Market',
@@ -16,8 +17,9 @@ export default async function MarketsPage({searchParams}:{searchParams:Promise<{
   const params=await searchParams;
   const selected=country(params.country);
   const top=allowedTop.includes(Number(params.top))?Number(params.top):(isNorthAfrica(selected)?1000:100);
-  let initialCompanies= isNorthAfrica(selected)?await getCanonicalNorthAfricaCompanies():[];
-  if(!isNorthAfrica(selected)){try{initialCompanies=await getMarketCompanies(selected);}catch{}}
+  let initialCompanies:MarketCompany[]= [];
+  if(isNorthAfrica(selected))initialCompanies=await getCanonicalNorthAfricaCompanies();
+  else{try{initialCompanies=await getMarketCompanies(selected);}catch{}}
   return <>
     <div style={{maxWidth:1280,margin:'0 auto',padding:'18px 28px 0',display:'flex',justifyContent:'flex-end'}}>
       <Link href="/markets/matrix" style={{fontSize:11,color:'var(--muted)',textDecoration:'none',letterSpacing:'.04em'}}>North Africa Market Matrix →</Link>
