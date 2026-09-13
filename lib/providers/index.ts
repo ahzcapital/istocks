@@ -1,3 +1,76 @@
-export type Quote={ticker:string;price:number;previousClose:number;changePercent:number;volume?:number;timestamp:string;source:string};export type FXRate={baseCurrency:'EGP';quoteCurrency:'USD';rate:number;timestamp:string;source:string};export interface MarketDataProvider{getQuotes(tickers?:string[]):Promise<Quote[]>;getQuote(ticker:string):Promise<Quote>;getHistoricalPrices(ticker:string):Promise<{timestamp:string;price:number}[]>;getFX():Promise<FXRate>;getMarketStatus():Promise<'open'|'closed'|'auction'>}
-export class FreeEGXProvider implements MarketDataProvider{private key=process.env.MARKET_DATA_API_KEY;async getQuotes(_tickers?:string[]):Promise<Quote[]>{if(!this.key)throw new Error('MARKET_DATA_API_KEY is not configured');throw new Error('Provider adapter is intentionally unbound: configure the licensed/free EGX-compatible endpoint in FreeEGXProvider.');}async getQuote(_ticker:string):Promise<Quote>{throw new Error('Provider not configured');}async getHistoricalPrices(_ticker:string):Promise<{timestamp:string;price:number}[]>{throw new Error('Provider not configured');}async getFX():Promise<FXRate>{return {baseCurrency:'EGP',quoteCurrency:'USD',rate:51.36,timestamp:new Date().toISOString(),source:'Configured FX provider'};}async getMarketStatus():Promise<'open'|'closed'|'auction'>{return 'closed';}}
-export const marketDataProvider=new FreeEGXProvider();
+import { getEgyptSnapshotFX, getEgyptSnapshotObservations } from '@/lib/market-data/egypt-snapshot';
+import type { MarketStatus } from '@/lib/market-data/pipeline';
+
+export type Quote = {
+  ticker: string;
+  price: number;
+  previousClose?: number;
+  changePercent?: number;
+  volume?: number;
+  timestamp: string;
+  source: string;
+};
+
+export type FXRate = {
+  baseCurrency: 'USD';
+  quoteCurrency: 'EGP';
+  rate: number;
+  timestamp: string;
+  source: string;
+};
+
+export interface MarketDataProvider {
+  getQuotes(tickers?: string[]): Promise<Quote[]>;
+  getQuote(ticker: string): Promise<Quote>;
+  getHistoricalPrices(ticker: string): Promise<{ timestamp: string; price: number }[]>;
+  getFX(): Promise<FXRate>;
+  getMarketStatus(): Promise<MarketStatus>;
+}
+
+/**
+ * Explicit snapshot adapter used until a real EGX provider is configured.
+ * This is deliberately named as a snapshot so callers cannot mistake it for live data.
+ */
+export class EgyptSnapshotProvider implements MarketDataProvider {
+  async getQuotes(tickers?: string[]): Promise<Quote[]> {
+    const observations = getEgyptSnapshotObservations();
+    const filtered = tickers?.length
+      ? observations.filter((observation) => tickers.includes(observation.ticker))
+      : observations;
+
+    return filtered.map(({ ticker, price, previousClose, changePercent, volume, timestamp, source }) => ({
+      ticker,
+      price,
+      previousClose,
+      changePercent,
+      volume,
+      timestamp,
+      source,
+    }));
+  }
+
+  async getQuote(ticker: string): Promise<Quote> {
+    const quote = (await this.getQuotes([ticker]))[0];
+    if (!quote) throw new Error(`Snapshot quote not found for ${ticker}`);
+    return quote;
+  }
+
+  async getHistoricalPrices(_ticker: string): Promise<{ timestamp: string; price: number }[]> {
+    throw new Error('Historical provider is not configured; refusing to fabricate historical prices.');
+  }
+
+  async getFX(): Promise<FXRate> {
+    return getEgyptSnapshotFX();
+  }
+
+  async getMarketStatus(): Promise<MarketStatus> {
+    return 'closed';
+  }
+}
+
+/**
+ * Compatibility alias retained for existing imports. It no longer claims to be a live provider.
+ */
+export class FreeEGXProvider extends EgyptSnapshotProvider {}
+
+export const marketDataProvider: MarketDataProvider = new EgyptSnapshotProvider();
