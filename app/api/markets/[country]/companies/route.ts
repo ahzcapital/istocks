@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {formatMarketCap,getMarket,hasMarket,getMarketCompanies,rankMarketCompanies} from '@/lib/markets/registry';
-import {filterNorthAfricaCompanies,getNorthAfricaCompanies,isNorthAfrica,NORTH_AFRICA_CONFIG} from '@/lib/markets/north-africa';
+import {filterNorthAfricaCompanies,getCanonicalNorthAfricaCompanies,isNorthAfrica,NORTH_AFRICA_CONFIG} from '@/lib/markets/north-africa';
 
 const ALLOWED_LIMITS=[10,20,50,100,200,300,400,500,1000] as const;
 
@@ -15,7 +15,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{country:stri
   const countryFilter=req.nextUrl.searchParams.get('marketCountry')??'All';
   try{
     if(isNorthAfrica(normalized)){
-      const ranked=getNorthAfricaCompanies();
+      const ranked=await getCanonicalNorthAfricaCompanies();
       const filtered=filterNorthAfricaCompanies(ranked,{country:countryFilter,sector,exchange,search});
       const data=filtered.slice(0,requested);
       const timestamps=ranked.map(c=>c.timestamp).filter(Boolean).sort().reverse();
