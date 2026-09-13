@@ -12,7 +12,7 @@ export const metadata:Metadata={
 const allowedTop=[10,20,50,100,200,300,400,500,1000];
 const country=(value:string|undefined)=>{
   const normalized=value?.toUpperCase();
-  return normalized===NORTH_AFRICA_CODE||normalized&&hasMarket(normalized)?normalized:'EG';
+  return normalized&&(normalized===NORTH_AFRICA_CODE||hasMarket(normalized))?normalized:'EG';
 };
 
 export default async function MarketsPage({searchParams}:{searchParams:Promise<{country?:string;top?:string;sector?:string;search?:string;exchange?:string;regionalCountry?:string}>}){
