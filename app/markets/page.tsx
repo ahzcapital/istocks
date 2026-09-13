@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import HomeClient from '../home-client';
 import Link from 'next/link';
 import {hasMarket,getMarketCompanies} from '@/lib/markets/registry';
+import {getNorthAfricaUniverse,NORTH_AFRICA_CODE} from '@/lib/markets/north-africa';
 
 export const metadata:Metadata={
   title:'North Africa Hub | Stock Market',
@@ -9,18 +10,23 @@ export const metadata:Metadata={
 };
 
 const allowedTop=[10,20,50,100,200,300,400,500,1000];
-const country=(value:string|undefined)=>value&&hasMarket(value.toUpperCase())?value.toUpperCase():'EG';
+const country=(value:string|undefined)=>{
+  const normalized=value?.toUpperCase();
+  return normalized===NORTH_AFRICA_CODE||normalized&&hasMarket(normalized)?normalized:'EG';
+};
 
-export default async function MarketsPage({searchParams}:{searchParams:Promise<{country?:string;top?:string;sector?:string;search?:string;exchange?:string}>}){
+export default async function MarketsPage({searchParams}:{searchParams:Promise<{country?:string;top?:string;sector?:string;search?:string;exchange?:string;regionalCountry?:string}>}){
   const params=await searchParams;
   const selected=country(params.country);
-  const top=allowedTop.includes(Number(params.top))?Number(params.top):100;
-  let initialCompanies:Awaited<ReturnType<typeof getMarketCompanies>>=[];
-  try{initialCompanies=await getMarketCompanies(selected)}catch{}
+  const top=allowedTop.includes(Number(params.top))?Number(params.top):(selected===NORTH_AFRICA_CODE?1000:100);
+  let initialCompanies=selected===NORTH_AFRICA_CODE?await getNorthAfricaUniverse():[];
+  if(selected!==NORTH_AFRICA_CODE){
+    try{initialCompanies=await getMarketCompanies(selected);}catch{}
+  }
   return <>
     <div style={{maxWidth:1280,margin:'0 auto',padding:'18px 28px 0',display:'flex',justifyContent:'flex-end'}}>
       <Link href="/markets/matrix" style={{fontSize:11,color:'var(--muted)',textDecoration:'none',letterSpacing:'.04em'}}>North Africa Market Matrix →</Link>
     </div>
-    <HomeClient initialCountry={selected} initialTop={top} initialSector={params.sector??'All'} initialSearch={params.search??''} initialExchange={params.exchange??'All'} initialCompanies={initialCompanies}/>
+    <HomeClient initialCountry={selected} initialTop={top} initialSector={params.sector??'All'} initialSearch={params.search??''} initialExchange={params.exchange??'All'} initialRegionalCountry={params.regionalCountry??'All'} initialCompanies={initialCompanies}/>
   </>;
 }
