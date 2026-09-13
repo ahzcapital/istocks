@@ -1,10 +1,10 @@
 export type NorthAfricaCountry={code:string;name:string;slug:string;flag:string;availableSections:string[]};
 export const NORTH_AFRICA_COUNTRIES:NorthAfricaCountry[]=[
- {code:'EG',name:'Egypt',slug:'egypt',flag:'🇪🇬',availableSections:['history','markets','economy','companies','travel','culture','geography','people','government','data','food','cinema']},
- {code:'LY',name:'Libya',slug:'libya',flag:'🇱🇾',availableSections:['history','economy','travel','culture','geography','people','government','data','food','cinema']},
- {code:'TN',name:'Tunisia',slug:'tunisia',flag:'🇹🇳',availableSections:['history','markets','economy','companies','travel','culture','geography','people','government','data','food','cinema']},
- {code:'DZ',name:'Algeria',slug:'algeria',flag:'🇩🇿',availableSections:['history','markets','economy','companies','travel','culture','geography','people','government','data','food','cinema']},
- {code:'MA',name:'Morocco',slug:'morocco',flag:'🇲🇦',availableSections:['history','markets','economy','companies','travel','culture','geography','people','government','data','food','cinema']},
+ {code:'EG',name:'Egypt',slug:'egypt',flag:'🇪🇬',availableSections:['history','markets','economy','companies','travel','culture','geography','people','government','data','food','cinema','boycott']},
+ {code:'LY',name:'Libya',slug:'libya',flag:'🇱🇾',availableSections:['history','economy','travel','culture','geography','people','government','data','food','cinema','boycott']},
+ {code:'TN',name:'Tunisia',slug:'tunisia',flag:'🇹🇳',availableSections:['history','markets','economy','companies','travel','culture','geography','people','government','data','food','cinema','boycott']},
+ {code:'DZ',name:'Algeria',slug:'algeria',flag:'🇩🇿',availableSections:['history','markets','economy','companies','travel','culture','geography','people','government','data','food','cinema','boycott']},
+ {code:'MA',name:'Morocco',slug:'morocco',flag:'🇲🇦',availableSections:['history','markets','economy','companies','travel','culture','geography','people','government','data','food','cinema','boycott']},
 ];
 export const NORTH_AFRICA_BY_SLUG=Object.fromEntries(NORTH_AFRICA_COUNTRIES.map(c=>[c.slug,c])) as Record<string,NorthAfricaCountry>;
 export const NORTH_AFRICA_SECTIONS=[
@@ -13,6 +13,7 @@ export const NORTH_AFRICA_SECTIONS=[
  {id:'food',label:'Food',href:'/food',group:'primary'},
  {id:'cinema',label:'Cinema',href:'/cinema',group:'primary'},
  {id:'people',label:'People',href:'/people',group:'primary'},
+ {id:'boycott',label:'Boycott',href:'/boycott',group:'primary'},
  {id:'vision',label:'Vision',href:'/vision',group:'institutional'},
 ] as const;
 export function getCountryBySlug(slug:string){return NORTH_AFRICA_BY_SLUG[slug.toLowerCase()]};
@@ -32,5 +33,6 @@ export const SECTION_CONTENT:Record<string,{eyebrow:string;title:string;descript
  map:{eyebrow:'North Africa',title:'Interactive Map',description:'The future geographic layer for exploring countries, cities, regions, destinations and verified data points.',topics:['Countries','Cities','Regions','Tourist destinations','Historical sites','Economic data','Population data']},
  about:{eyebrow:'North Africa Hub',title:'About',description:'North Africa Hub is evolving from a stock-market product into a broader North African information and data platform.',topics:['North Africa','Markets','Data','Research','Information architecture']},
  sources:{eyebrow:'North Africa Hub',title:'Sources',description:'A dedicated home for source transparency as new information domains are connected.',topics:['Financial sources','Economic datasets','Government sources','Historical sources','Geographic datasets']},
+ boycott:{eyebrow:'North Africa',title:'Boycott',description:'A structured reference for documented boycott campaigns and targeted products across North Africa.',topics:['Boycott campaigns','Targeted companies','Products','Reasons','Sources']},
  vision:{eyebrow:'North Africa Hub',title:'Vision',description:'North Africa Hub is building a long-term platform connecting North African markets, knowledge, culture and people through structured, verifiable information.',topics:['Our vision','Connecting North Africa','Economic development','Culture','Technology','Long-term ambition']},
 };
