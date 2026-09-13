@@ -38,8 +38,14 @@ function slugify(value:string){return value.normalize('NFKD').replace(/[\u0300-\
 function inferCategory(company:string):BoycottCategory{for(const [category,pattern] of CATEGORY_RULES)if(pattern.test(company))return category;return 'other';}
 function aliasesFor(company:string):string[]{
   const aliases:Record<string,string[]>={
-    'Coca-Cola':['Coke','Coca Cola'],"McDonald's":['McDonalds','McD'],Facebook:['Meta'],Meta:['Facebook','Instagram','WhatsApp'],
-    Google:['YouTube'],'P&G':['Procter & Gamble'],'L’Oréal':['L Oreal',"L'Oreal"]
+    'Coca-Cola':['Coke','Coca Cola'],
+    "McDonald's":['McDonalds','McD'],
+    Facebook:['Meta'],
+    Meta:['Facebook','Instagram','WhatsApp'],
+    Google:['YouTube'],
+    'P&G':['Procter & Gamble'],
+    "L’Oréal":['L Oreal',"L'Oreal"],
+    "L'Oréal":['L Oreal','L’Oréal'],
   };
   return aliases[company]??[];
 }
