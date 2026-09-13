@@ -9,9 +9,6 @@ on:
 permissions:
   contents: read
 
-env:
-  DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -29,8 +26,8 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Validate Prisma schema
-        run: npx prisma validate
+      - name: Generate Prisma Client and validate schema
+        run: npx prisma generate
 
       - name: Typecheck
         run: npm run typecheck
