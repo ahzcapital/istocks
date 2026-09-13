@@ -11,13 +11,19 @@ export type NorthAfricaCompany=MarketCompany & {
   countryFlag:string;
 };
 
+type RegionalCandidate=MarketCompany & {
+  countryName:string;
+  countryFlag:string;
+  marketCapUSD:number;
+};
+
 function stableKey(company:MarketCompany){
   return company.id||`${company.countryCode}-${company.exchangeCode}-${company.ticker}`;
 }
 
 export function buildNorthAfricaUniverse(companiesByMarket:Record<string,MarketCompany[]>):NorthAfricaCompany[]{
   const seen=new Set<string>();
-  const combined:NorthafricaCompanyInput[]=[];
+  const combined:RegionalCandidate[]=[];
   for(const code of NORTH_AFRICA_MARKETS){
     const config=MARKET_REGISTRY[code]?.config;
     if(!config)continue;
@@ -39,8 +45,6 @@ export function buildNorthAfricaUniverse(companiesByMarket:Record<string,MarketC
     .slice(0,NORTH_AFRICA_LIMIT)
     .map((company,index)=>({...company,regionalRank:index+1}));
 }
-
-type NorthafricaCompanyInput=NorthAfricaCompany;
 
 export async function getNorthAfricaUniverse(){
   const entries=await Promise.all(NORTH_AFRICA_MARKETS.map(async code=>[code,await getMarketCompanies(code)] as const));
