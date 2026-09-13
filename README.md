@@ -2,7 +2,7 @@
 
 A minimal, data-first North Africa information platform with a mature stock-market and company-intelligence product at its core.
 
-The platform currently covers **Egypt, Morocco, Tunisia and Algeria** for market/company data, with the broader North Africa platform architecture prepared for **Libya** and additional sections such as history, economy, travel, culture, geography, people, data, maps, methodology and sources.
+The platform currently covers **Egypt, Morocco, Tunisia and Algeria** for market/company data, with the broader North Africa platform architecture prepared for additional sections such as history, economy, travel, culture, geography, people, data, maps, methodology and sources.
 
 ## Product
 
@@ -25,6 +25,77 @@ It provides:
 - Company logos with safe initials fallback
 - Quote metadata such as previous close, open, high, low and volume when supplied by the provider
 - Financial statements, valuation and profitability metrics when verified provider data is available
+
+## Boycott research database
+
+North Africa Hub includes a dedicated `/boycott` research section for companies, brands and products documented in public boycott campaigns and corporate-research sources relevant to the Arab world and North Africa.
+
+The Boycott section is intentionally **source-transparent rather than presented as one universal or official boycott list**. Different sources use different classifications, and the application preserves those distinctions.
+
+The database can distinguish between:
+
+- BDS consumer boycott priority targets
+- BDS grassroots / organic boycott campaigns
+- BDS pressure targets
+- BDS divestment / exclusion targets
+- Israeli companies and brands
+- Arab / North African grassroots campaigns
+- Independent boycott databases
+- Historical or concluded campaigns
+- Other documented community/source-reported campaigns
+
+### Boycott data principles
+
+The Boycott database follows the same no-fabrication principle as the market-data product:
+
+- Every company must have source provenance.
+- Every boycott classification must be supported by the cited source.
+- BDS classifications are kept separate from independent databases and grassroots campaigns.
+- Companies are deduplicated across sources rather than repeated as separate records.
+- Parent companies, brands, subsidiaries and franchisees are distinguished where the evidence allows.
+- Reasons are written from documented evidence rather than generated from assumptions.
+- Historical campaigns are not silently presented as current campaigns.
+- Unsupported claims are not added merely because they appear in social-media lists.
+- Missing or uncertain information remains explicitly uncertain.
+
+### Source resilience
+
+The Boycott dataset uses a repository-owned source snapshot as a production safety layer. Live third-party sources may be refreshed or reconciled, but an upstream failure or incomplete response must never silently turn the Boycott page into an empty dataset.
+
+The data pipeline validates source results before accepting them and falls back to the last valid repository snapshot when a source is unavailable or incomplete.
+
+### Boycott source transparency
+
+Each entry can expose:
+
+- Company name
+- Product / brand
+- Classification
+- Campaign status
+- Reason for inclusion
+- Source organization
+- Original source URL
+- Evidence/context where available
+- Last verification date
+- Visibility tier
+
+The default visibility ordering is an **editorial consumer-prominence ranking**, intended to surface widely recognized companies first. It is not an audited measure of North African sales, market share or boycott participation.
+
+### Boycott search and discovery
+
+The Boycott explorer supports:
+
+- Company and brand search
+- Arabic aliases for major companies
+- Classification filtering
+- Campaign-status filtering
+- Visibility filtering
+- Source filtering
+- Source-detail views
+- Responsive desktop and mobile presentation
+- Company-logo resolution with safe initials fallback
+
+The Boycott database is designed to be expanded as additional reliable evidence becomes available without changing the underlying UI architecture.
 
 ## Company intelligence
 
@@ -120,6 +191,7 @@ The application has a centralized country/section architecture designed to expan
 
 - History
 - Stock Market
+- Boycott
 - Economy
 - Companies
 - Travel
@@ -148,7 +220,7 @@ The shared navigation supports:
 - Breadcrumbs
 - Loading, empty, error and coming-soon states
 
-The homepage is now the platform's minimal identity layer, while the stock-market product is accessed through `/markets` and the other sections can be expanded independently without duplicating country/page architecture.
+The homepage is the platform's minimal identity layer, while the stock-market product is accessed through `/markets`, the research database through `/boycott`, and the other sections can be expanded independently without duplicating country/page architecture.
 
 ## Architecture
 
@@ -174,6 +246,24 @@ Next.js UI
 
 The architecture is designed so market-specific differences such as ticker conventions, currencies, exchanges, time zones and provider availability are handled through configuration and provider adapters rather than duplicated UI code.
 
+The Boycott architecture follows the same principle:
+
+```text
+Source registry
+        ↓
+Source retrieval / repository snapshot
+        ↓
+Validation
+        ↓
+Normalization + deduplication
+        ↓
+Classification + provenance
+        ↓
+Visibility ranking
+        ↓
+Boycott research explorer
+```
+
 ## Data integrity rules
 
 North Africa Hub follows a strict no-fabrication policy:
@@ -184,17 +274,22 @@ North Africa Hub follows a strict no-fabrication policy:
 - Never fabricate historical prices.
 - Never fabricate FX rates.
 - Never fabricate financial statements.
+- Never fabricate boycott targets, company relationships or boycott reasons.
 - Never imply delayed data is real-time.
 - Derived metrics must use verified provider inputs.
 - Calculated values are explicitly identified where appropriate.
 - Unsupported or unavailable metrics remain unavailable.
 - Historical USD conversion must use historical FX data when available.
+- Boycott classifications must retain their source context.
+- A failed third-party Boycott source must never silently erase the repository's valid dataset.
 
-## Data providers
+## Data providers and research sources
 
-The application currently uses free/provider-accessible market and financial data sources, including Yahoo Finance market-data endpoints and optional Alpha Vantage fundamentals.
+The market application currently uses free/provider-accessible market and financial data sources, including Yahoo Finance market-data endpoints and optional Alpha Vantage fundamentals.
 
-Provider data can be delayed, incomplete or unavailable for individual exchanges. The UI exposes source/status information rather than hiding provider limitations.
+The Boycott research database uses multiple public research and campaign sources. Depending on the entry, these may include primary campaign organizations, independent boycott databases, recognized research organizations, official company material and reputable reporting.
+
+Provider and research-source data can be delayed, incomplete or unavailable. The UI exposes source/status information rather than hiding limitations or filling gaps with invented information.
 
 ## Setup
 
@@ -222,8 +317,10 @@ The application can continue without an Alpha Vantage key by using its existing 
 - `/markets` — stock-market experience
 - `/markets/[country]` — country market route
 
-### North Africa platform routes
+### Research and North Africa platform routes
 
+- `/boycott` — source-backed boycott research database
+- `/boycott/source` — internal source/provenance detail view
 - `/history`
 - `/markets`
 - `/economy`
@@ -272,9 +369,11 @@ Before considering a change production-ready:
 5. Company pages must work across supported markets.
 6. Missing provider data must degrade safely to `—`/unavailable states.
 7. Historical USD values must not silently fall back to today's FX rate.
-8. No fake company, price, FX or financial values may be introduced.
+8. No fake company, price, FX, financial or boycott values may be introduced.
 9. Desktop and mobile navigation must remain usable.
-10. New deployments must be verified before being described as production-ready.
+10. Boycott source failures must fall back to a valid repository snapshot.
+11. Boycott records must have valid provenance and classifications.
+12. New deployments must be verified before being described as production-ready.
 
 ## Deployment
 
@@ -290,7 +389,7 @@ Do not consider a GitHub commit production-ready until the corresponding Vercel 
 
 ## Project philosophy
 
-**North Africa Hub** is intended to become a reliable, structured information layer for North Africa — beginning with public markets and expanding into broader economic, historical, geographic, cultural and company intelligence.
+**North Africa Hub** is intended to become a reliable, structured information layer for North Africa — beginning with public markets and expanding into broader economic, historical, geographic, cultural, company and research intelligence.
 
 The guiding principle is simple:
 
