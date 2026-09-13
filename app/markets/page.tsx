@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import HomeClient from '../home-client';
 import Link from 'next/link';
 import {hasMarket,getMarketCompanies} from '@/lib/markets/registry';
-import {getNorthAfricaCompanies,isNorthAfrica} from '@/lib/markets/north-africa';
+import {getCanonicalNorthAfricaCompanies,isNorthAfrica} from '@/lib/markets/north-africa';
 
 export const metadata:Metadata={
   title:'North Africa Hub | Stock Market',
@@ -16,7 +16,7 @@ export default async function MarketsPage({searchParams}:{searchParams:Promise<{
   const params=await searchParams;
   const selected=country(params.country);
   const top=allowedTop.includes(Number(params.top))?Number(params.top):(isNorthAfrica(selected)?1000:100);
-  let initialCompanies=isNorthAfrica(selected)?getNorthAfricaCompanies():[];
+  let initialCompanies= isNorthAfrica(selected)?await getCanonicalNorthAfricaCompanies():[];
   if(!isNorthAfrica(selected)){try{initialCompanies=await getMarketCompanies(selected);}catch{}}
   return <>
     <div style={{maxWidth:1280,margin:'0 auto',padding:'18px 28px 0',display:'flex',justifyContent:'flex-end'}}>
