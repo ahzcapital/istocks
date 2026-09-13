@@ -7,7 +7,12 @@ import {CATEGORY_LABELS} from '@/lib/boycott/data';
 import styles from './boycott-explorer.module.css';
 
 function normalize(value:string){return value.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
-function initials(name:string){const words=name.replace(/[^\p{L}\p{N}\s&-]/gu,' ').trim().split(/\s+/).filter(Boolean);if(!words.length)return '—';if(words.length===1)return words[0].slice(0,2).toUpperCase();return `${words[0][0]}${words[1][0]}`.toUpperCase();}
+function initials(name:string){
+  const words=name.trim().split(/\s+/).filter(Boolean);
+  if(!words.length)return '—';
+  if(words.length===1)return Array.from(words[0]).slice(0,2).join('').toUpperCase();
+  return `${Array.from(words[0])[0]??''}${Array.from(words[1])[0]??''}`.toUpperCase();
+}
 
 function Logo({entry}:{entry:BoycottEntry}){
   const [src,setSrc]=useState(entry.logo??'');
