@@ -33,22 +33,23 @@ export function buildNorthAfricaMatrix():NorthAfricaMatrix{
     const ranked=[...companies].sort((a,b)=>(b.marketCapUSD??-1)-(a.marketCapUSD??-1));
     const totalMarketCapLocal=companies.reduce((sum,company)=>sum+(company.marketCapLocal??0),0);
     const totalMarketCapUSD=companies.reduce((sum,company)=>sum+(company.marketCapUSD??0),0);
+    const lastUpdated=companies.reduce((latest,company)=>company.timestamp&&company.timestamp>latest?company.timestamp:latest,config.lastUpdated??'');
     return {
       code,
       countryName:config.countryName,
       flag:config.flag,
       exchangeName:config.exchangeName,
       currencyCode:config.currencyCode,
-      benchmark:config.benchmark,
+      benchmark:config.benchmark??'—',
       status:getMarketStatusSync(code),
       companies:companies.length,
       totalMarketCapLocal,
       totalMarketCapUSD,
       topCompany:ranked[0],
       knownMarketCaps:companies.filter(company=>company.marketCapUSD!==undefined).length,
-      dataSource:config.dataSource,
-      delay:config.delay,
-      lastUpdated:companies.reduce((latest,company)=>company.timestamp&&company.timestamp>latest?company.timestamp:latest,config.lastUpdated),
+      dataSource:config.dataSource??'—',
+      delay:config.delay??'—',
+      lastUpdated:lastUpdated||'—',
     } satisfies NorthAfricaMatrixRow;
   });
   const totalCompanies=rows.reduce((sum,row)=>sum+row.companies,0);
