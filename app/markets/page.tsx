@@ -11,7 +11,7 @@ export const metadata:Metadata={
 };
 
 const allowedTop=[10,20,50,100,200,300,400,500,1000];
-const country=(value:string|undefined)=>value&&((value.toUpperCase()==='NA')||hasMarket(value.toUpperCase()))?value.toUpperCase():'EG';
+const country=(value:string|undefined)=>value&&((value.toUpperCase()==='NA')||hasMarket(value.toUpperCase()))?value.toUpperCase():'NA';
 
 export default async function MarketsPage({searchParams}:{searchParams:Promise<{country?:string;top?:string;sector?:string;search?:string;exchange?:string;marketCountry?:string}>}){
   const params=await searchParams;
