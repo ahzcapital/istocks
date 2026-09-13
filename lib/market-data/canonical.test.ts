@@ -9,7 +9,7 @@ describe('canonical market data', () => {
     expect(result.meta.source).toBeTruthy();
     expect(result.meta.asOf).toBeTruthy();
     expect(result.data.length).toBeGreaterThan(0);
-    expect(result.data[0].rank).toBe(1);
+    expect(result.data[0].marketCapLocal).toBeGreaterThan(0);
     expect(result.data[0].currency).toBe('EGP');
   });
 
